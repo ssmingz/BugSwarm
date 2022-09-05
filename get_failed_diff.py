@@ -2,13 +2,26 @@ import requests
 import os
 import json
 
-token = 'NEc6kALgl4Wid0LvtypQuGUuIiguytpAfctYabLQ5F8'
+TOKEN = 'NEc6kALgl4Wid0LvtypQuGUuIiguytpAfctYabLQ5F8'
 ROOT = '/Users/yumeng/Workspace/BugSwarm-master'
+
+bugswarm_path = os.path.join(ROOT, 'docs', 'bugswarm.json')
+if os.path.exists(bugswarm_path):
+    with open(bugswarm_path) as fd:
+        bugswarm_jobs = json.load(fd)
 
 travis_jobs_path = os.path.join(ROOT, 'docs', 'travis_data.json')
 if os.path.exists(travis_jobs_path):
     with open(travis_jobs_path) as fd:
         travis_jobs = json.load(fd)
+
+target_list = []
+for job in bugswarm_jobs:
+    bugid = job['image_tag']
+    lang_is_java = job['failed_job']['config']['language'] == 'java'
+    cl_is_test = (job['classification']['test'] == 'No') and (job['classification']['code'] == 'Yes') and (job['classification']['build'] == 'No')
+    if lang_is_java and cl_is_test:
+        target_list.append(bugid)
 
 images = []
 with open(os.path.join(ROOT, 'docs', 'commits.txt')) as fd:
@@ -25,8 +38,10 @@ with open(os.path.join(ROOT, 'docs', 'commits.txt')) as fd:
 count = 0
 for image in images:
     bug_id = image['branch']
+    if bug_id not in target_list:
+        continue
 
-    bug_path = os.path.join(ROOT, 'BugSwarm', bug_id)
+    bug_path = os.path.join(ROOT, 'BugSwarm_java_gt0lt50_inCode', bug_id)
     diff_path = os.path.join(bug_path, 'failed.diff')
 
     if os.path.exists(diff_path):
