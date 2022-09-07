@@ -1,27 +1,30 @@
 import requests
 import os
 import json
+from bugswarm.common.rest_api.database_api import DatabaseAPI
+
 
 TOKEN = 'NEc6kALgl4Wid0LvtypQuGUuIiguytpAfctYabLQ5F8'
-ROOT = '/Users/yumeng/Workspace/BugSwarm-master'
+ROOT = 'D:\\expdata\\bugswarm\\BugSwarm-master'
 
-bugswarm_path = os.path.join(ROOT, 'docs', 'bugswarm.json')
-if os.path.exists(bugswarm_path):
-    with open(bugswarm_path) as fd:
-        bugswarm_jobs = json.load(fd)
+#bugswarmapi = DatabaseAPI(token=TOKEN)
+#api_filter = '{"lang":{"$in":["Java"]},"reproduce_successes":{"$gt":0},"build_system":{"$in":["Maven","Ant","Gradle"]},"classification.code":["Yes","Partial"]}'
+#bugswarmapi.filter_artifacts(api_filter)
 
 travis_jobs_path = os.path.join(ROOT, 'docs', 'travis_data.json')
 if os.path.exists(travis_jobs_path):
     with open(travis_jobs_path) as fd:
         travis_jobs = json.load(fd)
 
-target_list = []
-for job in bugswarm_jobs:
-    bugid = job['image_tag']
-    lang_is_java = job['failed_job']['config']['language'] == 'java'
-    cl_is_test = (job['classification']['test'] == 'No') and (job['classification']['code'] == 'Yes') and (job['classification']['build'] == 'No')
-    if lang_is_java and cl_is_test:
-        target_list.append(bugid)
+bugswarm_jobs_path = os.path.join(ROOT, 'docs', 'bugswarm.json')
+if os.path.exists(bugswarm_jobs_path):
+    with open(bugswarm_jobs_path) as fd:
+        bugswarm_jobs = json.load(fd)
+
+target_bugid_list = []
+with open('targetlist.txt', 'r') as file:
+    for l in file:
+        target_bugid_list.append(l.strip())
 
 images = []
 with open(os.path.join(ROOT, 'docs', 'commits.txt')) as fd:
@@ -38,10 +41,10 @@ with open(os.path.join(ROOT, 'docs', 'commits.txt')) as fd:
 count = 0
 for image in images:
     bug_id = image['branch']
-    if bug_id not in target_list:
+    if bug_id not in target_bugid_list:
         continue
 
-    bug_path = os.path.join(ROOT, 'BugSwarm_java_gt0lt50_inCode', bug_id)
+    bug_path = os.path.join(ROOT, 'BugSwarm', bug_id)
     diff_path = os.path.join(bug_path, 'failed.diff')
 
     if os.path.exists(diff_path):
